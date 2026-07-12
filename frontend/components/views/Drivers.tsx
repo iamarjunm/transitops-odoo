@@ -108,7 +108,7 @@ export function Drivers() {
         setIsLoading(true);
         setError("");
 
-        const response = await fetch(`${API_BASE_URL}/drivers`, {
+        const response = await fetch(`${API_BASE_URL}/drivers/list`, {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
@@ -173,8 +173,10 @@ export function Drivers() {
     try {
       setError("");
       const isEditing = Boolean(editingDriverId);
-      const response = await fetch(`${API_BASE_URL}/drivers${isEditing ? `/${editingDriverId}` : ""}`, {
-        method: isEditing ? "PATCH" : "POST",
+      const response = await fetch(
+        `${API_BASE_URL}/drivers${isEditing ? `/update/${editingDriverId}` : "/create"}`,
+        {
+          method: isEditing ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
@@ -188,7 +190,8 @@ export function Drivers() {
           safety_score: Number(formData.safetyScore),
           status: formData.status,
         }),
-      });
+        }
+      );
 
       const data = (await response.json().catch(() => null)) as BackendDriver | { detail?: string } | null;
 
@@ -228,11 +231,13 @@ export function Drivers() {
 
     try {
       setError("");
-      const response = await fetch(`${API_BASE_URL}/drivers/${driverId}`, {
-        method: "DELETE",
+      const response = await fetch(`${API_BASE_URL}/drivers/delete/${driverId}`, {
+        method: "PATCH",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
@@ -259,7 +264,7 @@ export function Drivers() {
 
     try {
       setError("");
-      const response = await fetch(`${API_BASE_URL}/drivers/${driverId}`, {
+      const response = await fetch(`${API_BASE_URL}/drivers/update/${driverId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

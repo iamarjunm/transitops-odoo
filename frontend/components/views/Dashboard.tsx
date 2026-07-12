@@ -107,7 +107,7 @@ export function Dashboard() {
               Authorization: `Bearer ${authToken}`,
             },
           }),
-          fetch(`${API_BASE_URL}/drivers`, {
+          fetch(`${API_BASE_URL}/drivers/list`, {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
