@@ -4,7 +4,8 @@ from datetime import date, datetime, timezone
 from app.models.trips import Trip, TripStatus
 from app.models.drivers import Driver, DriverStatus
 from app.models.vehicle import Vehicle, VehicleStatus
-from core.database import get_db
+from app.core.database import get_db
+from app.api.deps import get_current_user
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -122,7 +123,7 @@ class TripDetailResponse(BaseModel):
 
 
 @router.post("/create", response_model=TripResponse, status_code=201)
-def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
+def create_trip(payload: TripCreate, db: Session = Depends(get_db), _=Depends(get_current_user)):
 
     vehicle = db.get(Vehicle, payload.vehicle_id)
     if vehicle is None:
@@ -214,7 +215,7 @@ def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/list", response_model=list[TripListItem])
-def get_trip_list(db: Session = Depends(get_db)):
+def get_trip_list(db: Session = Depends(get_db), _=Depends(get_current_user)):
     trips = (
         db.query(Trip)
         .options(
@@ -249,7 +250,7 @@ def get_trip_list(db: Session = Depends(get_db)):
 @router.post("/{trip_id}/dispatch", response_model=TripResponse)
 def dispatch_trip(
     trip_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), _=Depends(get_current_user),
 ):
     trip = db.get(Trip, trip_id)
 
@@ -303,7 +304,7 @@ def dispatch_trip(
 def complete_trip(
     trip_id: int,
     payload: CompleteTripRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), _=Depends(get_current_user),
 ):
     trip = db.get(Trip, trip_id)
 
@@ -347,7 +348,7 @@ def complete_trip(
 @router.post("/{trip_id}/cancel", response_model=TripResponse)
 def cancel_trip(
     trip_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), _=Depends(get_current_user),
 ):
     trip = db.get(Trip, trip_id)
 
@@ -384,7 +385,7 @@ def cancel_trip(
 @router.get("/{trip_id}", response_model=TripDetailResponse)
 def get_trip_detail(
     trip_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), _=Depends(get_current_user),
 ):
     trip = (
         db.query(Trip)
@@ -441,7 +442,7 @@ def get_trip_detail(
 @router.delete("/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_trip(
     trip_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), _=Depends(get_current_user),
 ):
     trip = db.get(Trip, trip_id)
 
