@@ -32,6 +32,11 @@ class Driver(Base):
         nullable=False,
     )
 
+    email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     license_number: Mapped[str] = mapped_column(
         String(50),
         unique=True,
