@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, vehicles, driver_management, dashboard, maintenance, trip_management
+from app.api.routes import auth, vehicles, driver_management, dashboard, maintenance, expenses, trip_management
 
 app = FastAPI(title="TransitOps API")
 
@@ -23,6 +23,7 @@ app.include_router(vehicles.router)
 app.include_router(dashboard.router)
 app.include_router(driver_management.router)
 app.include_router(maintenance.router)
+app.include_router(expenses.router)
 app.include_router(trip_management.router)
 
 
