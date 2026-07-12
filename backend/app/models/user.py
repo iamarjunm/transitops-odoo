@@ -8,13 +8,17 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    """Roles used for Role-Based Access Control (RBAC)."""
+    """Roles used for Role-Based Access Control (RBAC).
 
-    FLEET_MANAGER = "fleet_manager"
-    DRIVER = "driver"
-    SAFETY_OFFICER = "safety_officer"
-    FINANCIAL_ANALYST = "financial_analyst"
-    ADMIN = "admin"
+    Values match the labels the frontend uses (see frontend/lib/types.ts) so the
+    JWT `role` claim and API responses map 1:1 with the UI with no translation.
+    """
+
+    ADMIN = "Admin"
+    FLEET_MANAGER = "Fleet Manager"
+    DISPATCHER = "Dispatcher"
+    SAFETY_OFFICER = "Safety Officer"
+    FINANCIAL_ANALYST = "Financial Analyst"
 
 
 class User(Base):
@@ -25,7 +29,14 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        SAEnum(UserRole, name="user_role", native_enum=False, length=32),
+        SAEnum(
+            UserRole,
+            name="user_role",
+            native_enum=False,
+            length=32,
+            # store the human-readable value ("Fleet Manager") not the member name
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
         nullable=False,
         default=UserRole.FLEET_MANAGER,
     )
