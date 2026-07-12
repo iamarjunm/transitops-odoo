@@ -137,6 +137,31 @@ export function Vehicles() {
     }
   };
 
+  const handleStatusChange = async (vehicleId: string, newStatus: VehicleStatus) => {
+    if (!authToken || !canManageVehicles) return;
+    try {
+      setError("");
+      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.detail || "Unable to update vehicle status.");
+      }
+
+      setVehicles(prev => prev.map(v => v.id === vehicleId ? { ...v, status: newStatus } : v));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update vehicle status.");
+    }
+  };
+
+
   const statusTabs: (VehicleStatus | "All")[] = ["All", "Available", "On Trip", "In Shop", "Retired"];
   const filteredVehicles = vehicles.filter(v => {
     const matchesStatus = statusFilter === "All" || v.status === statusFilter;
@@ -269,14 +294,32 @@ export function Vehicles() {
                   <td className="px-5 py-3.5">{v.capacity} kg</td>
                   <td className="px-5 py-3.5 font-mono text-xs">{v.odometer.toLocaleString()} km</td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-1 inline-flex rounded-full text-[11px] font-semibold border ${
-                      v.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
-                      v.status === 'On Trip' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' :
-                      v.status === 'In Shop' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' :
-                      'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
-                    }`}>
-                      {v.status}
-                    </span>
+                    {canManageVehicles ? (
+                      <select
+                        value={v.status}
+                        onChange={(e) => handleStatusChange(v.id, e.target.value as VehicleStatus)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-transparent outline-none cursor-pointer transition-all ${
+                          v.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
+                          v.status === 'On Trip' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' :
+                          v.status === 'In Shop' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' :
+                          'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                        }`}
+                      >
+                        <option value="Available" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">Available</option>
+                        <option value="On Trip" disabled className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">On Trip</option>
+                        <option value="In Shop" disabled className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">In Shop</option>
+                        <option value="Retired" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">Retired</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2.5 py-1 inline-flex rounded-full text-[11px] font-semibold border ${
+                        v.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
+                        v.status === 'On Trip' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' :
+                        v.status === 'In Shop' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' :
+                        'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                      }`}>
+                        {v.status}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -337,7 +337,7 @@ export function Trips() {
       </div>
 
       {/* Error */}
-      {error && (
+      {error && completeModalId === null && deleteConfirmId === null && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300 animate-in slide-in-from-top-2 duration-200">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
@@ -406,7 +406,13 @@ export function Trips() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-gray-200 dark:border-neutral-800 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Complete Trip</h3>
-            <p className="text-sm text-gray-500 dark:text-neutral-400 mb-6">Log final odometer reading and fuel consumed.</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">Log final odometer reading and fuel consumed.</p>
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300 mb-4 animate-in slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {error}
+              </div>
+            )}
             <form onSubmit={handleComplete} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1.5">End Odometer (km)</label>
@@ -435,7 +441,13 @@ export function Trips() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-gray-200 dark:border-neutral-800 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Trip</h3>
-            <p className="text-sm text-gray-500 dark:text-neutral-400 mb-6">Are you sure you want to permanently delete this trip? This action cannot be undone.</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">Are you sure you want to permanently delete this trip? This action cannot be undone.</p>
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300 mb-4 animate-in slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {error}
+              </div>
+            )}
             <div className="flex justify-end gap-3">
               <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 text-sm text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors">Cancel</button>
               <button onClick={() => handleDelete(deleteConfirmId)} disabled={actionLoading === deleteConfirmId}

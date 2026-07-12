@@ -98,9 +98,21 @@ function mapDriverStatus(drivers: BackendDriver[]): DriverStatusRow {
 }
 
 export function Dashboard() {
-  const { currentUser, authToken, vehicles, drivers, trips } = useStore();
+  const { currentUser, authToken, vehicles: storeVehicles, drivers: storeDrivers, trips: storeTrips } = useStore();
   const [kpis, setKpis] = useState<DashboardKPIs>(emptyKpis);
   const [driverStatus, setDriverStatus] = useState<DriverStatusRow>(emptyDriverStatus);
+  const [localVehicles, setLocalVehicles] = useState<{ id: string; name: string }[]>([]);
+  const [localDrivers, setLocalDrivers] = useState<{ id: string; name: string }[]>([]);
+  const [localTrips, setLocalTrips] = useState<{
+    id: string;
+    source: string;
+    dest: string;
+    vehicleId: string;
+    driverId: string;
+    status: string;
+    distance: number;
+    createdAt: string;
+  }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -114,31 +126,32 @@ export function Dashboard() {
       }
 
       try {
-        setLoading(true);
-        setError("");
-
-        const [kpiResponse, driversResponse] = await Promise.all([
+        const [kpiResponse, driversResponse, vehiclesResponse, tripsResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/dashboard/kpis`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
+            headers: { Authorization: `Bearer ${authToken}` },
           }),
           fetch(`${API_BASE_URL}/drivers/list`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch(`${API_BASE_URL}/vehicles`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch(`${API_BASE_URL}/trips/list`, {
+            headers: { Authorization: `Bearer ${authToken}` },
           }),
         ]);
 
-        const kpiData = (await kpiResponse.json().catch(() => null)) as DashboardKPIs | { detail?: string } | null;
-        const driverData = (await driversResponse.json().catch(() => null)) as BackendDriver[] | { detail?: string } | null;
+        const kpiData = await kpiResponse.json().catch(() => null);
+        const driverData = await driversResponse.json().catch(() => null);
+        const vehicleData = await vehiclesResponse.json().catch(() => null);
+        const tripData = await tripsResponse.json().catch(() => null);
 
         if (!kpiResponse.ok) {
-          throw new Error(kpiData && "detail" in kpiData && kpiData.detail ? kpiData.detail : "Unable to load dashboard metrics.");
+          throw new Error(kpiData?.detail || "Unable to load dashboard metrics.");
         }
 
         if (!driversResponse.ok) {
-          throw new Error(driverData && "detail" in driverData && driverData.detail ? driverData.detail : "Unable to load driver metrics.");
+          throw new Error(driverData?.detail || "Unable to load driver metrics.");
         }
 
         if (isDashboardKPIs(kpiData)) {
@@ -147,18 +160,50 @@ export function Dashboard() {
 
         if (Array.isArray(driverData)) {
           setDriverStatus(mapDriverStatus(driverData));
+          setLocalDrivers(driverData.map(d => ({ id: String(d.id), name: d.full_name })));
+        }
+
+        if (Array.isArray(vehicleData)) {
+          setLocalVehicles(vehicleData.map(v => ({ id: String(v.id), name: v.name })));
+        }
+
+        if (Array.isArray(tripData)) {
+          setLocalTrips(tripData.map(t => ({
+            id: String(t.id),
+            source: t.source,
+            dest: t.destination,
+            vehicleId: String(t.vehicle_id),
+            driverId: String(t.driver_id),
+            status: t.status === "draft" ? "Draft" : t.status === "dispatched" ? "Dispatched" : t.status === "completed" ? "Completed" : "Cancelled",
+            distance: t.planned_distance_km,
+            createdAt: t.created_at
+          })));
         }
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard metrics.");
-        const activeVehicles = vehicles.filter(v => v.status !== 'Retired').length;
-        const availableVehicles = vehicles.filter(v => v.status === 'Available').length;
-        const inMaintenance = vehicles.filter(v => v.status === 'In Shop').length;
-        const activeTrips = trips.filter(t => t.status === 'Dispatched').length;
-        const pendingTrips = trips.filter(t => t.status === 'Draft').length;
-        const driversOnDuty = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
-        const offDutyDrivers = drivers.filter(d => d.status === 'Off Duty').length;
-        const onTripVehicles = vehicles.filter(v => v.status === 'On Trip').length;
-        const retiredVehicles = vehicles.filter(v => v.status === 'Retired').length;
+        
+        setLocalVehicles(storeVehicles.map(v => ({ id: v.id, name: v.name })));
+        setLocalDrivers(storeDrivers.map(d => ({ id: d.id, name: d.name })));
+        setLocalTrips(storeTrips.map(t => ({
+          id: t.id,
+          source: t.source,
+          dest: t.dest,
+          vehicleId: t.vehicleId,
+          driverId: t.driverId,
+          status: t.status,
+          distance: t.distance,
+          createdAt: t.createdAt
+        })));
+
+        const activeVehicles = storeVehicles.filter(v => v.status !== 'Retired').length;
+        const availableVehicles = storeVehicles.filter(v => v.status === 'Available').length;
+        const inMaintenance = storeVehicles.filter(v => v.status === 'In Shop').length;
+        const activeTrips = storeTrips.filter(t => t.status === 'Dispatched').length;
+        const pendingTrips = storeTrips.filter(t => t.status === 'Draft').length;
+        const driversOnDuty = storeDrivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
+        const offDutyDrivers = storeDrivers.filter(d => d.status === 'Off Duty').length;
+        const onTripVehicles = storeVehicles.filter(v => v.status === 'On Trip').length;
+        const retiredVehicles = storeVehicles.filter(v => v.status === 'Retired').length;
 
         setKpis({
           active_vehicles: activeVehicles,
@@ -168,7 +213,7 @@ export function Dashboard() {
           pending_trips: pendingTrips,
           drivers_on_duty: driversOnDuty,
           fleet_utilization: activeVehicles > 0 ? Math.round((onTripVehicles / activeVehicles) * 100) : 0,
-          total_vehicles: vehicles.length,
+          total_vehicles: storeVehicles.length,
           fleet_status: {
             available: availableVehicles,
             on_trip: onTripVehicles,
@@ -177,10 +222,10 @@ export function Dashboard() {
           },
         });
         setDriverStatus({
-          available: drivers.filter(d => d.status === 'Available').length,
-          onTrip: drivers.filter(d => d.status === 'On Trip').length,
+          available: storeDrivers.filter(d => d.status === 'Available').length,
+          onTrip: storeDrivers.filter(d => d.status === 'On Trip').length,
           offDuty: offDutyDrivers,
-          suspended: drivers.filter(d => d.status === 'Suspended').length,
+          suspended: storeDrivers.filter(d => d.status === 'Suspended').length,
         });
       } finally {
         setLoading(false);
@@ -188,9 +233,10 @@ export function Dashboard() {
     };
 
     void loadKpis();
-  }, [authToken, drivers, trips, vehicles]);
+  }, [authToken, storeDrivers, storeTrips, storeVehicles]);
 
-  const recentTrips = [...trips].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentTrips = [...localTrips].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+
 
   const stats = [
     { label: "Active Fleet", value: kpis.active_vehicles, icon: Truck, color: "text-blue-600 dark:text-blue-500", bg: "bg-blue-100 dark:bg-blue-500/10" },
@@ -276,8 +322,8 @@ export function Dashboard() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-neutral-800">
                 {recentTrips.map(t => {
-                  const v = vehicles.find(v => v.id === t.vehicleId);
-                  const d = drivers.find(d => d.id === t.driverId);
+                  const v = localVehicles.find(v => v.id === t.vehicleId);
+                  const d = localDrivers.find(d => d.id === t.driverId);
                   return (
                     <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-neutral-800/30 transition-colors">
                       <td className="px-6 py-3.5">
