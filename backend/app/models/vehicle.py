@@ -21,6 +21,7 @@ class Vehicle(Base):
     registration_number: Mapped[str] = mapped_column(String(32), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
+    region: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)  # max load in kg
     odometer: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cost: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)

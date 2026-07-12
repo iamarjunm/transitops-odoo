@@ -26,6 +26,7 @@ def list_vehicles(
     _: object = Depends(get_current_user),
     status: VehicleStatus | None = None,
     type: str | None = None,
+    region: str | None = None,
     search: str | None = Query(default=None, description="match registration number or name"),
 ):
     stmt = select(Vehicle)
@@ -33,6 +34,8 @@ def list_vehicles(
         stmt = stmt.where(Vehicle.status == status)
     if type:
         stmt = stmt.where(Vehicle.type == type)
+    if region:
+        stmt = stmt.where(Vehicle.region == region)
     if search:
         term = f"%{search}%"
         stmt = stmt.where(or_(Vehicle.registration_number.ilike(term), Vehicle.name.ilike(term)))
