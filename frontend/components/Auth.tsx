@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useStore } from "@/lib/store";
 import { Role } from "@/lib/types";
-import { Truck, Mail, Lock, ArrowRight } from "lucide-react";
+import { Truck, Mail, Lock, ArrowRight, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 
 type AuthMode = "login";
@@ -89,23 +89,97 @@ export default function Auth() {
     <div className="min-h-screen flex bg-white dark:bg-neutral-950 font-sans">
       {/* Left side - Image/Branding */}
       <div className="hidden lg:flex w-1/2 relative bg-gray-50 dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 overflow-hidden">
-        <div className="absolute inset-0">
-          <Image 
-            src="https://picsum.photos/seed/transitops/1920/1080" 
-            alt="Logistics background" 
-            fill
-            className="object-cover opacity-[0.08] dark:opacity-30 mix-blend-multiply dark:mix-blend-luminosity"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent dark:from-neutral-950 dark:via-neutral-900/80 dark:to-transparent" />
+        <div className="absolute inset-0 bg-slate-950 flex flex-col justify-center items-center overflow-hidden p-8">
+          <style>{`
+            @keyframes dash {
+              to {
+                stroke-dashoffset: -200;
+              }
+            }
+          `}</style>
+          
+          {/* Grid background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-60" />
+          
+          {/* Glowing nodes and routes */}
+          <div className="relative w-full max-w-md aspect-square flex items-center justify-center scale-90 translate-y-6">
+            {/* Pulsing glow backdrops */}
+            <div className="absolute top-1/4 left-1/4 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl" />
+
+            {/* SVG connecting routes */}
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400" fill="none">
+              {/* Route 1 */}
+              <path d="M 80 150 Q 200 80 320 220" stroke="rgba(59, 130, 246, 0.15)" strokeWidth="3" strokeDasharray="6 6" />
+              <path d="M 80 150 Q 200 80 320 220" stroke="url(#blue-grad)" strokeWidth="3" strokeDasharray="30 150" className="animate-[dash_6s_linear_infinite]" />
+              
+              {/* Route 2 */}
+              <path d="M 80 150 Q 150 280 280 320" stroke="rgba(16, 185, 129, 0.15)" strokeWidth="3" strokeDasharray="6 6" />
+              <path d="M 80 150 Q 150 280 280 320" stroke="url(#green-grad)" strokeWidth="3" strokeDasharray="40 160" className="animate-[dash_8s_linear_infinite]" />
+
+              <defs>
+                <linearGradient id="blue-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#3b82f6" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="green-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* Interactive nodes */}
+            <div className="absolute top-[130px] left-[55px] flex flex-col items-center">
+              <div className="w-5 h-5 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping absolute" />
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+              </div>
+              <span className="text-[9px] font-mono font-semibold text-gray-400 mt-1 uppercase tracking-wider">Depot Alpha</span>
+            </div>
+
+            <div className="absolute top-[200px] right-[55px] flex flex-col items-center">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute" />
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              </div>
+              <span className="text-[9px] font-mono font-semibold text-gray-400 mt-1 uppercase tracking-wider">Warehouse Beta</span>
+            </div>
+
+            <div className="absolute bottom-[60px] left-[255px] flex flex-col items-center">
+              <div className="w-5 h-5 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+              </div>
+              <span className="text-[9px] font-mono font-semibold text-gray-400 mt-1 uppercase tracking-wider">Hub Gamma</span>
+            </div>
+
+            {/* Floating stats card overlay mockups */}
+            <div className="absolute top-[20px] right-[10px] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 shadow-xl flex items-center gap-2.5 animate-bounce [animation-duration:5s]">
+              <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-400"><Truck className="w-3.5 h-3.5" /></div>
+              <div>
+                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Active Dispatch</p>
+                <p className="text-[11px] font-bold text-white mt-0.5 font-mono">GJ01AB1104 <span className="text-[9px] font-normal text-emerald-400 font-sans">On Time</span></p>
+              </div>
+            </div>
+
+            <div className="absolute bottom-[80px] left-[0px] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 shadow-xl flex items-center gap-2.5 animate-bounce [animation-duration:6s]">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400"><TrendingUp className="w-3.5 h-3.5" /></div>
+              <div>
+                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Fleet Performance</p>
+                <p className="text-[11px] font-bold text-white mt-0.5 font-mono">94.8% <span className="text-[9px] font-normal text-gray-400 font-sans">Avg. Score</span></p>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="relative z-10 flex flex-col justify-between w-full p-12 lg:p-16">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20">
+            <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/25">
               <Truck className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white tracking-tight">TransitOps</h1>
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">TransitOps</h1>
           </div>
 
           <motion.div 
@@ -114,10 +188,10 @@ export default function Auth() {
             transition={{ duration: 0.8 }}
             className="max-w-lg"
           >
-            <h2 className="text-4xl font-display font-semibold text-gray-900 dark:text-white leading-tight mb-5">
+            <h2 className="text-4xl font-display font-semibold text-white leading-tight mb-5">
               Command center for your entire transport operation.
             </h2>
-            <p className="text-gray-600 dark:text-neutral-300 text-lg leading-relaxed">
+            <p className="text-gray-300 text-base leading-relaxed">
               Real-time tracking, intelligent dispatching, and predictive maintenance—all in one unified platform.
             </p>
           </motion.div>

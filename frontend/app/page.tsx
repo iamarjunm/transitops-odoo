@@ -49,7 +49,7 @@ function MainLayout() {
 
       <main className="flex-1 overflow-auto flex flex-col min-w-0">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0 no-print">
           <button onClick={() => setMobileOpen(true)} className="p-2 text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-xl transition-colors">
             <Menu className="w-5 h-5" />
           </button>

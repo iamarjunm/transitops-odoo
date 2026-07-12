@@ -6,10 +6,10 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export const tabs = [
-  { id: 'Dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Fleet Manager', 'Dispatcher'] },
-  { id: 'Fleet', icon: Truck, label: 'Fleet Registry', roles: ['Admin', 'Fleet Manager'] },
+  { id: 'Dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Fleet Manager', 'Dispatcher', 'Safety Officer', 'Financial Analyst'] },
+  { id: 'Fleet', icon: Truck, label: 'Fleet Registry', roles: ['Admin', 'Fleet Manager', 'Dispatcher', 'Financial Analyst'] },
   { id: 'Drivers', icon: Users, label: 'Drivers', roles: ['Admin', 'Safety Officer'] },
-  { id: 'Trips', icon: Map, label: 'Trip Dispatcher', roles: ['Admin', 'Dispatcher'] },
+  { id: 'Trips', icon: Map, label: 'Trip Dispatcher', roles: ['Admin', 'Dispatcher', 'Fleet Manager', 'Safety Officer'] },
   { id: 'Maintenance', icon: Wrench, label: 'Maintenance', roles: ['Admin', 'Fleet Manager'] },
   { id: 'Expenses', icon: Receipt, label: 'Fuel & Expenses', roles: ['Admin', 'Financial Analyst'] },
   { id: 'Analytics', icon: LineChart, label: 'Analytics', roles: ['Admin', 'Fleet Manager', 'Financial Analyst'] },

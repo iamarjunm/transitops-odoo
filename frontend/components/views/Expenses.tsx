@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/lib/store";
-import { Loader2, AlertCircle, Fuel, Receipt, IndianRupee, Trash2, Calendar, FileText, PlusCircle, Search } from "lucide-react";
+import { Loader2, AlertCircle, Fuel, Receipt, IndianRupee, Trash2, Calendar, FileText, PlusCircle, Search, Download } from "lucide-react";
 
 /* ───────── Backend types ───────── */
 
@@ -194,12 +194,17 @@ export function Expenses() {
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Fuel & Expenses</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">Monitor and record operations expenditure</p>
         </div>
-        {canManage && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97] flex items-center gap-2">
-            <PlusCircle className="w-4 h-4" /> {showForm ? "Cancel" : "Log Expense"}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end no-print">
+          <button onClick={() => window.print()} className="bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-800 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+            <Download className="w-4 h-4" /> Export PDF
           </button>
-        )}
+          {canManage && (
+            <button onClick={() => setShowForm(!showForm)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97] flex items-center gap-2">
+              <PlusCircle className="w-4 h-4" /> {showForm ? "Cancel" : "Log Expense"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -310,7 +315,7 @@ export function Expenses() {
 
       {/* Search and Filters */}
       {!isLoading && (
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 no-print">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input

@@ -241,13 +241,11 @@ export function Drivers() {
 
     try {
       setError("");
-      const response = await fetch(`${API_BASE_URL}/drivers/delete/${driverId}`, {
-        method: "PATCH",
+      const response = await fetch(`${API_BASE_URL}/drivers/${driverId}`, {
+        method: "DELETE",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
@@ -408,19 +406,17 @@ export function Drivers() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      {canManageDrivers ? (
+                      {canManageDrivers && d.status !== 'On Trip' ? (
                         <select
                           value={toBackendStatus(d.status)}
                           onChange={e => void handleStatusUpdate(d.id, e.target.value as BackendDriver["status"])}
                           className={`w-full max-w-[170px] rounded-md border px-2 py-1 text-xs font-medium outline-none transition-colors bg-white dark:bg-neutral-950 ${
                             d.status === 'Available' && !expired ? 'text-green-600 border-green-500/30' :
-                            d.status === 'On Trip' ? 'text-blue-500 border-blue-500/30' :
                             d.status === 'Off Duty' ? 'text-gray-500 border-neutral-500/30' :
                             'text-red-500 border-red-500/30'
                           }`}
                         >
                           <option value="available">Available</option>
-                          <option value="on_trip">On Trip</option>
                           <option value="off_duty">Off Duty</option>
                           <option value="suspended">Suspended</option>
                         </select>

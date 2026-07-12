@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { useTheme } from "next-themes";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Loader2, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area, CartesianGrid } from "recharts";
+import { Loader2, AlertCircle, TrendingUp, Download } from "lucide-react";
 
 /* ───────── Backend types ───────── */
 
@@ -25,6 +25,7 @@ type BackendExpense = {
   amount: number;
   liters: number | null;
   vehicle_id: number | null;
+  date: string;
 };
 
 /* ───────── Component ───────── */
@@ -71,7 +72,7 @@ export function Analytics() {
       // Fallback to store mocks
       setVehicles(storeVehicles.map(v => ({ id: Number(v.id) || 0, name: v.name, status: v.status, cost: v.cost })));
       setTrips(storeTrips.map(t => ({ status: t.status === "Completed" ? "completed" : t.status === "Dispatched" ? "dispatched" : t.status === "Draft" ? "draft" : "cancelled", planned_distance_km: t.distance })));
-      setExpenses(storeExpenses.map(e => ({ type: e.type, amount: e.amount, liters: e.liters || null, vehicle_id: Number(e.vehicleId) || null })));
+      setExpenses(storeExpenses.map(e => ({ type: e.type, amount: e.amount, liters: e.liters || null, vehicle_id: Number(e.vehicleId) || null, date: e.date })));
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +104,33 @@ export function Analytics() {
      return { name: v.name, cost: vExp };
   }).sort((a,b) => b.cost - a.cost).slice(0, 5);
 
+  // Expense breakdown
+  const fuelTotal = expenses.filter(e => e.type === "Fuel").reduce((a, b) => a + b.amount, 0);
+  const tollTotal = expenses.filter(e => e.type === "Toll").reduce((a, b) => a + b.amount, 0);
+  const maintTotal = expenses.filter(e => e.type === "Maintenance").reduce((a, b) => a + b.amount, 0);
+  const otherTotal = expenses.filter(e => e.type === "Other").reduce((a, b) => a + b.amount, 0);
+
+  const expenseBreakdown = [
+    { name: "Fuel", value: fuelTotal, color: "#10b981" },
+    { name: "Tolls", value: tollTotal, color: "#3b82f6" },
+    { name: "Maintenance", value: maintTotal, color: "#f97316" },
+    { name: "Other", value: otherTotal, color: "#6366f1" },
+  ].filter(item => item.value > 0);
+
+  // Daily cost trend (last 7 days of logs)
+  const dailyCostsMap = new Map<string, number>();
+  expenses.forEach(e => {
+    dailyCostsMap.set(e.date, (dailyCostsMap.get(e.date) || 0) + e.amount);
+  });
+  const dailyCostsData = Array.from(dailyCostsMap.entries())
+    .map(([date, amount]) => ({
+      date: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      rawDate: new Date(date).getTime(),
+      amount
+    }))
+    .sort((a, b) => a.rawDate - b.rawDate)
+    .slice(-7);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex justify-between items-center border-b border-gray-100 dark:border-neutral-800 pb-5">
@@ -110,6 +138,9 @@ export function Analytics() {
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Reports & Analytics</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5 font-sans">Strategic fleet KPIs and expenditure summaries</p>
         </div>
+        <button onClick={() => window.print()} className="bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-800 dark:text-white px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 no-print">
+          <Download className="w-4 h-4" /> Export PDF
+        </button>
       </div>
 
       {error && (
@@ -193,6 +224,77 @@ export function Analytics() {
                       </div>
                       <div className="w-full bg-gray-100 dark:bg-neutral-800 rounded-full h-1.5"><div className="bg-orange-500 h-1.5 rounded-full" style={{width: "65%"}}></div></div>
                    </div>
+                </div>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+             {/* Expense Breakdown */}
+             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-6 flex flex-col h-80 shadow-sm">
+                <h3 className="text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-6">Expense Allocation</h3>
+                <div className="flex-1 min-h-0 flex items-center justify-between">
+                   <div className="w-1/2 h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                         <PieChart>
+                            <Pie
+                               data={expenseBreakdown}
+                               cx="50%"
+                               cy="50%"
+                               innerRadius={55}
+                               outerRadius={75}
+                               paddingAngle={4}
+                               dataKey="value"
+                            >
+                               {expenseBreakdown.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                               ))}
+                            </Pie>
+                            <Tooltip 
+                               contentStyle={{backgroundColor: theme === "dark" ? "#171717" : "#fff", borderColor: theme === "dark" ? "#333" : "#e5e7eb", borderRadius: "10px", color: theme === "dark" ? "#fff" : "#111", fontSize: "12px"}}
+                               formatter={(value) => [`₹${value}`, "Amount"]}
+                            />
+                         </PieChart>
+                      </ResponsiveContainer>
+                   </div>
+                   <div className="space-y-3 w-1/2 pl-4">
+                      {expenseBreakdown.map((item, index) => (
+                         <div key={index} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                               <span className="text-gray-500 dark:text-neutral-400 font-medium">{item.name}</span>
+                            </div>
+                            <span className="font-semibold text-gray-900 dark:text-white font-mono">₹{item.value.toLocaleString()}</span>
+                         </div>
+                      ))}
+                      {expenseBreakdown.length === 0 && (
+                         <span className="text-xs text-gray-400 italic">No expenses recorded</span>
+                      )}
+                   </div>
+                </div>
+             </div>
+
+             {/* Daily Cost Trend */}
+             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-6 flex flex-col h-80 shadow-sm">
+                <h3 className="text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-6">Operations Cost Trend</h3>
+                <div className="flex-1 min-h-0">
+                   <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={dailyCostsData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                         <defs>
+                            <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                         </defs>
+                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#222" : "#f1f1f1"} />
+                         <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{fill: theme === "dark" ? "#888" : "#666", fontSize: 10}} />
+                         <YAxis tickLine={false} axisLine={false} tick={{fill: theme === "dark" ? "#888" : "#666", fontSize: 10}} />
+                         <Tooltip 
+                            contentStyle={{backgroundColor: theme === "dark" ? "#171717" : "#fff", borderColor: theme === "dark" ? "#333" : "#e5e7eb", borderRadius: "10px", color: theme === "dark" ? "#fff" : "#111", fontSize: "12px"}}
+                            formatter={(value) => [`₹${value}`, "Expenditure"]}
+                         />
+                         <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCost)" />
+                      </AreaChart>
+                   </ResponsiveContainer>
                 </div>
              </div>
           </div>

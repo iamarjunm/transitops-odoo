@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Vehicle, VehicleStatus } from "@/lib/types";
-import { Loader2, Search, Truck as TruckIcon } from "lucide-react";
+import { Loader2, Search, Truck as TruckIcon, Download } from "lucide-react";
 
 type BackendVehicle = {
   id: number;
@@ -184,16 +184,21 @@ export function Vehicles() {
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Vehicle Registry</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">Manage your fleet vehicles and their status</p>
         </div>
-        {canManageVehicles ? (
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97]"
-          >
-            {showForm ? 'Cancel' : '+ Add Vehicle'}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end no-print">
+          <button onClick={() => window.print()} className="bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-800 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+            <Download className="w-4 h-4" /> Export PDF
           </button>
-        ) : (
-          <span className="text-sm text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1.5 rounded-lg">View only</span>
-        )}
+          {canManageVehicles ? (
+            <button 
+              onClick={() => setShowForm(!showForm)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97]"
+            >
+              {showForm ? 'Cancel' : '+ Add Vehicle'}
+            </button>
+          ) : (
+            <span className="text-sm text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1.5 rounded-lg">View only</span>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -242,7 +247,7 @@ export function Vehicles() {
 
       {/* Search + Filter */}
       {!isLoading && (
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 no-print">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -294,20 +299,16 @@ export function Vehicles() {
                   <td className="px-5 py-3.5">{v.capacity} kg</td>
                   <td className="px-5 py-3.5 font-mono text-xs">{v.odometer.toLocaleString()} km</td>
                   <td className="px-5 py-3.5">
-                    {canManageVehicles ? (
+                    {canManageVehicles && (v.status === 'Available' || v.status === 'Retired') ? (
                       <select
                         value={v.status}
                         onChange={(e) => handleStatusChange(v.id, e.target.value as VehicleStatus)}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-transparent outline-none cursor-pointer transition-all ${
                           v.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
-                          v.status === 'On Trip' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' :
-                          v.status === 'In Shop' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' :
                           'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
                         }`}
                       >
                         <option value="Available" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">Available</option>
-                        <option value="On Trip" disabled className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">On Trip</option>
-                        <option value="In Shop" disabled className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">In Shop</option>
                         <option value="Retired" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">Retired</option>
                       </select>
                     ) : (

@@ -119,3 +119,37 @@
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* ─── Print Styles for PDF Export ─── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print, nav, sidebar, button, select, input, form, [role="navigation"] {
+    display: none !important;
+  }
+  main, .flex-1, .max-w-6xl {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .bg-white, .bg-neutral-900, .bg-gray-50, .bg-gray-100 {
+    background-color: white !important;
+    color: black !important;
+    border-color: #e5e7eb !important;
+  }
+  .text-white, .text-gray-900, .dark\:text-white {
+    color: black !important;
+  }
+  .text-gray-500, .dark\:text-neutral-400 {
+    color: #4b5563 !important;
+  }
+  * {
+    color-scheme: light !important;
+  }
+}
+

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Truck, Activity, Wrench, AlertTriangle, Route, CheckCircle, Clock } from "lucide-react";
+import { Truck, Activity, Wrench, AlertTriangle, Route, CheckCircle, Clock, Loader2 } from "lucide-react";
 
 type DashboardFleetStatus = {
   available: number;
@@ -237,6 +237,14 @@ export function Dashboard() {
 
   const recentTrips = [...localTrips].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+        <span className="ml-3 text-sm text-gray-500 dark:text-neutral-400">Loading dashboard overview…</span>
+      </div>
+    );
+  }
 
   const stats = [
     { label: "Active Fleet", value: kpis.active_vehicles, icon: Truck, color: "text-blue-600 dark:text-blue-500", bg: "bg-blue-100 dark:bg-blue-500/10" },

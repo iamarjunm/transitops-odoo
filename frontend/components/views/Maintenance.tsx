@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/lib/store";
-import { Loader2, AlertCircle, Wrench, CheckCircle, Clock, IndianRupee } from "lucide-react";
+import { Loader2, AlertCircle, Wrench, CheckCircle, Clock, IndianRupee, Download } from "lucide-react";
 
 /* ───────── Backend types ───────── */
 
@@ -170,7 +170,7 @@ export function Maintenance() {
   };
 
   /* ───── Derived ───── */
-  const eligibleVehicles = vehicles.filter(v => v.status !== "Retired");
+  const eligibleVehicles = vehicles.filter(v => v.status === "Available");
   const filtered = statusFilter === "All" ? records : records.filter(r => r.status === statusFilter);
   const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -193,12 +193,17 @@ export function Maintenance() {
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Maintenance Log</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">Track vehicle service history and active repairs</p>
         </div>
-        {canManage && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97]">
-            {showForm ? "Cancel" : "+ Log Service"}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end no-print">
+          <button onClick={() => window.print()} className="bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-800 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+            <Download className="w-4 h-4" /> Export PDF
           </button>
-        )}
+          {canManage && (
+            <button onClick={() => setShowForm(!showForm)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.97]">
+              {showForm ? "Cancel" : "+ Log Service"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -285,7 +290,7 @@ export function Maintenance() {
 
       {/* Filter tabs */}
       {!isLoading && (
-        <div className="flex gap-1 bg-gray-100 dark:bg-neutral-800/50 p-1 rounded-xl w-fit">
+        <div className="flex gap-1 bg-gray-100 dark:bg-neutral-800/50 p-1 rounded-xl w-fit no-print">
           {filterTabs.map(tab => (
             <button key={tab.value} onClick={() => setStatusFilter(tab.value)}
               className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
