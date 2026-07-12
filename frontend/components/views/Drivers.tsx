@@ -7,6 +7,7 @@ import { Role } from "@/lib/types";
 type BackendDriver = {
   id: number;
   full_name: string;
+  email: string | null;
   license_number: string;
   license_category: string;
   license_expiry_date: string;
@@ -19,6 +20,7 @@ type BackendDriver = {
 type DriverView = {
   id: string;
   name: string;
+  email: string;
   licenseNo: string;
   category: string;
   expiry: string;
@@ -29,6 +31,7 @@ type DriverView = {
 
 type DriverFormState = {
   name: string;
+  email: string;
   licenseNo: string;
   category: string;
   expiry: string;
@@ -39,6 +42,7 @@ type DriverFormState = {
 
 const defaultFormState: DriverFormState = {
   name: "",
+  email: "",
   licenseNo: "",
   category: "LMV",
   expiry: "",
@@ -89,6 +93,7 @@ function mapDriver(driver: BackendDriver): DriverView {
   return {
     id: String(driver.id),
     name: driver.full_name,
+    email: driver.email ?? "",
     licenseNo: driver.license_number,
     category: driver.license_category,
     expiry: driver.license_expiry_date,
@@ -156,6 +161,7 @@ export function Drivers() {
   const openEditForm = (driver: DriverView) => {
     setFormData({
       name: driver.name,
+      email: driver.email,
       licenseNo: driver.licenseNo,
       category: driver.category,
       expiry: driver.expiry,
@@ -193,6 +199,7 @@ export function Drivers() {
         },
         body: JSON.stringify({
           full_name: formData.name.trim(),
+          email: formData.email.trim() || null,
           license_number: formData.licenseNo.trim().toUpperCase(),
           license_category: formData.category,
           license_expiry_date: formData.expiry,
@@ -325,6 +332,10 @@ export function Drivers() {
             <div>
               <label className="block text-xs text-gray-500 dark:text-neutral-400 mb-1">Full Name</label>
               <input required value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full bg-gray-50 dark:bg-neutral-950 border border-gray-300 dark:border-neutral-700 rounded px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none" placeholder="Jane Doe" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-neutral-400 mb-1">Email</label>
+              <input type="email" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} className="w-full bg-gray-50 dark:bg-neutral-950 border border-gray-300 dark:border-neutral-700 rounded px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none" placeholder="jane@company.com" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 dark:text-neutral-400 mb-1">License Number</label>

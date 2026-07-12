@@ -1,15 +1,14 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.drivers import Driver, DriverStatus
 from app.core.database import get_db
 
-from app.models.user import User
-
 
 class CreateDriverRequest(BaseModel):
     full_name: str
+    email: EmailStr | None = None
     license_number: str
     license_category: str
     license_expiry_date: date
@@ -17,6 +16,7 @@ class CreateDriverRequest(BaseModel):
 
 class UpdateDriverRequest(BaseModel):
     full_name: str | None = None
+    email: EmailStr | None = None
     license_number: str | None = None
     license_category: str | None = None
     license_expiry_date: date | None = None
@@ -32,27 +32,6 @@ def create_driver(
     request: CreateDriverRequest,
     db: Session = Depends(get_db),
 ):
-    # Verify user exists
-    user = db.get(User, request.user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    # Ensure user doesn't already have a driver profile
-    existing_driver = (
-        db.query(Driver)
-        .filter(Driver.user_id == request.user_id)
-        .first()
-    )
-
-    if existing_driver:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Driver profile already exists for this user",
-        )
-
     # Ensure license number is unique
     existing_license = (
         db.query(Driver)
@@ -67,7 +46,8 @@ def create_driver(
         )
 
     driver = Driver(
-        user_id=request.user_id,
+        full_name=request.full_name,
+        email=request.email,
         license_number=request.license_number,
         license_category=request.license_category,
         license_expiry_date=request.license_expiry_date,
@@ -130,7 +110,7 @@ def update_driver(
     return driver
 
 @router.patch("/delete/{driver_id}", status_code=status.HTTP_200_OK)
-def update_driver(
+def delete_driver(
     driver_id: int,
     request: UpdateDriverRequest,
     db: Session = Depends(get_db),
