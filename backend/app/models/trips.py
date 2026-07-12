@@ -10,7 +10,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Numeric
 from app.core.database import Base
 
 
@@ -36,7 +36,7 @@ class Trip(Base):
     )
 
     driver_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("drivers.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
@@ -44,7 +44,10 @@ class Trip(Base):
     cargo_weight_kg: Mapped[float] = mapped_column(nullable=False)
     planned_distance_km: Mapped[float] = mapped_column(nullable=False)
 
-    revenue: Mapped[float | None] = mapped_column(nullable=True)
+    revenue: Mapped[float | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True,
+    )
 
     status: Mapped[TripStatus] = mapped_column(
         SAEnum(TripStatus, name="trip_status", native_enum=False, length=32),
@@ -62,8 +65,8 @@ class Trip(Base):
         nullable=True,
     )
 
-    start_odometer_km: Mapped[float | None] = mapped_column(nullable=True)
-    end_odometer_km: Mapped[float | None] = mapped_column(nullable=True)
+    start_odometer_km: Mapped[int  | None] = mapped_column(nullable=True)
+    end_odometer_km: Mapped[int  | None] = mapped_column(nullable=True)
 
     fuel_consumed_liters: Mapped[float | None] = mapped_column(nullable=True)
 
@@ -81,4 +84,4 @@ class Trip(Base):
     )
 
     vehicle = relationship("Vehicle", back_populates="trips")
-    driver = relationship("User", back_populates="trips")
+    driver = relationship("Driver", back_populates="trips")
