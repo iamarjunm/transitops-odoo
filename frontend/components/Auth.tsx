@@ -27,6 +27,15 @@ type AuthResponse = {
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
+const demoUsers = [
+  { role: "Admin", email: "admin@transitops.com", password: "Admin@123" },
+  { role: "Fleet Manager", email: "fleet@transitops.com", password: "Fleet@123" },
+  { role: "Dispatcher", email: "dispatch@transitops.com", password: "Dispatch@123" },
+  { role: "Safety Officer", email: "safety@transitops.com", password: "Safety@123" },
+  { role: "Financial Analyst", email: "finance@transitops.com", password: "Finance@123" },
+];
+
+
 export default function Auth() {
   const { login } = useStore();
   const [email, setEmail] = useState("");
@@ -190,6 +199,25 @@ export default function Auth() {
             </button>
           </form>
 
+          <div className="mt-8 border-t border-gray-100 dark:border-neutral-800 pt-6">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-widest mb-3">Quick Demo Logins</p>
+            <div className="grid grid-cols-2 gap-2">
+              {demoUsers.map((user, i) => (
+                <button
+                  key={user.email}
+                  type="button"
+                  onClick={() => {
+                    setEmail(user.email);
+                    setPassword(user.password);
+                  }}
+                  className={`flex flex-col text-left p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100/80 dark:bg-neutral-900/50 dark:hover:bg-neutral-900 border border-gray-200/50 dark:border-neutral-800/80 transition-all active:scale-[0.97] ${i === 4 ? "col-span-2" : ""}`}
+                >
+                  <span className="text-xs font-semibold text-gray-900 dark:text-neutral-200">{user.role}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-neutral-500 truncate mt-0.5">{user.email}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>
