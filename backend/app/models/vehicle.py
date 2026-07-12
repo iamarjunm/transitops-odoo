@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import String, Integer, Numeric, DateTime, Enum as SAEnum, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
@@ -43,6 +43,8 @@ class Vehicle(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+
+    trips = relationship("Trip", back_populates="vehicle")
 
     def __repr__(self) -> str:
         return f"<Vehicle {self.registration_number} {self.status}>"

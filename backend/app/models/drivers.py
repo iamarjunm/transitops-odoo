@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     Enum as SAEnum,
     Float,
+    ForeignKey,
     String,
     func,
 )
