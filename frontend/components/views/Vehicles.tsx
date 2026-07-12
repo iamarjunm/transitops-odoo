@@ -18,6 +18,16 @@ type BackendVehicle = {
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
+function isBackendVehicle(data: unknown): data is BackendVehicle {
+  return Boolean(
+    data &&
+    typeof data === "object" &&
+    "id" in data &&
+    "registration_number" in data &&
+    "name" in data
+  );
+}
+
 function mapBackendVehicle(vehicle: BackendVehicle): Vehicle {
   return {
     id: String(vehicle.id),
@@ -113,7 +123,7 @@ export function Vehicles() {
         throw new Error(data && "detail" in data && data.detail ? data.detail : "Unable to save vehicle.");
       }
 
-      if (data && !("detail" in data)) {
+      if (isBackendVehicle(data)) {
         setVehicles(prev => [mapBackendVehicle(data), ...prev]);
       }
 

@@ -75,6 +75,16 @@ function toBackendStatus(status: DriverView["status"]): BackendDriver["status"] 
   }
 }
 
+function isBackendDriver(data: unknown): data is BackendDriver {
+  return Boolean(
+    data &&
+    typeof data === "object" &&
+    "id" in data &&
+    "full_name" in data &&
+    "license_number" in data
+  );
+}
+
 function mapDriver(driver: BackendDriver): DriverView {
   return {
     id: String(driver.id),
@@ -199,7 +209,7 @@ export function Drivers() {
         throw new Error(data && "detail" in data && data.detail ? data.detail : "Unable to save driver.");
       }
 
-      if (data && !("detail" in data)) {
+      if (isBackendDriver(data)) {
         const mapped = mapDriver(data);
         setDrivers(prev => {
           if (isEditing) {
@@ -279,7 +289,7 @@ export function Drivers() {
         throw new Error(data && "detail" in data && data.detail ? data.detail : "Unable to update driver status.");
       }
 
-      if (data && !("detail" in data)) {
+      if (isBackendDriver(data)) {
         setDrivers(prev => prev.map(driver => (driver.id === driverId ? mapDriver(data) : driver)));
       }
     } catch (updateError) {
