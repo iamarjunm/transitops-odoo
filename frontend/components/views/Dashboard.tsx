@@ -1,33 +1,196 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Truck, Activity, Wrench, AlertTriangle, Route, CheckCircle, Clock } from "lucide-react";
 
-export function Dashboard() {
-  const { vehicles, drivers, trips } = useStore();
+type DashboardFleetStatus = {
+  available: number;
+  on_trip: number;
+  in_shop: number;
+  retired: number;
+};
 
-  const activeVehicles = vehicles.filter(v => v.status !== 'Retired');
-  const availableVehicles = vehicles.filter(v => v.status === 'Available');
-  const inMaintenance = vehicles.filter(v => v.status === 'In Shop');
-  
-  const activeTrips = trips.filter(t => t.status === 'Dispatched');
-  const pendingTrips = trips.filter(t => t.status === 'Draft');
-  
-  const driversOnDuty = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip');
-  
-  const fleetUtilization = activeVehicles.length > 0 
-    ? Math.round((vehicles.filter(v => v.status === 'On Trip').length / activeVehicles.length) * 100) 
-    : 0;
+type DashboardKPIs = {
+  active_vehicles: number;
+  available_vehicles: number;
+  vehicles_in_maintenance: number;
+  active_trips: number;
+  pending_trips: number;
+  drivers_on_duty: number;
+  fleet_utilization: number;
+  total_vehicles: number;
+  fleet_status: DashboardFleetStatus;
+};
+
+type DriverStatusRow = {
+  available: number;
+  onTrip: number;
+  offDuty: number;
+  suspended: number;
+};
+
+type BackendDriver = {
+  id: number;
+  full_name: string;
+  license_number: string;
+  license_category: string;
+  license_expiry_date: string;
+  contact_number: string;
+  safety_score: number;
+  status: "available" | "on_trip" | "off_duty" | "suspended";
+  created_at: string;
+};
+
+const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000").replace(/\/$/, "");
+
+const emptyKpis: DashboardKPIs = {
+  active_vehicles: 0,
+  available_vehicles: 0,
+  vehicles_in_maintenance: 0,
+  active_trips: 0,
+  pending_trips: 0,
+  drivers_on_duty: 0,
+  fleet_utilization: 0,
+  total_vehicles: 0,
+  fleet_status: {
+    available: 0,
+    on_trip: 0,
+    in_shop: 0,
+    retired: 0,
+  },
+};
+
+const emptyDriverStatus: DriverStatusRow = {
+  available: 0,
+  onTrip: 0,
+  offDuty: 0,
+  suspended: 0,
+};
+
+function mapDriverStatus(drivers: BackendDriver[]): DriverStatusRow {
+  return drivers.reduce(
+    (acc, driver) => {
+      if (driver.status === "available") acc.available += 1;
+      if (driver.status === "on_trip") acc.onTrip += 1;
+      if (driver.status === "off_duty") acc.offDuty += 1;
+      if (driver.status === "suspended") acc.suspended += 1;
+      return acc;
+    },
+    { ...emptyDriverStatus },
+  );
+}
+
+export function Dashboard() {
+  const { currentUser, authToken, vehicles, drivers, trips } = useStore();
+  const [kpis, setKpis] = useState<DashboardKPIs>(emptyKpis);
+  const [driverStatus, setDriverStatus] = useState<DriverStatusRow>(emptyDriverStatus);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadKpis = async () => {
+      if (!authToken) {
+        setKpis(emptyKpis);
+        setDriverStatus(emptyDriverStatus);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError("");
+
+        const [kpiResponse, driversResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/dashboard/kpis`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }),
+          fetch(`${API_BASE_URL}/drivers`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }),
+        ]);
+
+        const kpiData = (await kpiResponse.json().catch(() => null)) as DashboardKPIs | { detail?: string } | null;
+        const driverData = (await driversResponse.json().catch(() => null)) as BackendDriver[] | { detail?: string } | null;
+
+        if (!kpiResponse.ok) {
+          throw new Error(kpiData && "detail" in kpiData && kpiData.detail ? kpiData.detail : "Unable to load dashboard metrics.");
+        }
+
+        if (!driversResponse.ok) {
+          throw new Error(driverData && "detail" in driverData && driverData.detail ? driverData.detail : "Unable to load driver metrics.");
+        }
+
+        if (kpiData && !("detail" in kpiData)) {
+          setKpis(kpiData);
+        }
+
+        if (Array.isArray(driverData)) {
+          setDriverStatus(mapDriverStatus(driverData));
+        }
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard metrics.");
+        const activeVehicles = vehicles.filter(v => v.status !== 'Retired').length;
+        const availableVehicles = vehicles.filter(v => v.status === 'Available').length;
+        const inMaintenance = vehicles.filter(v => v.status === 'In Shop').length;
+        const activeTrips = trips.filter(t => t.status === 'Dispatched').length;
+        const pendingTrips = trips.filter(t => t.status === 'Draft').length;
+        const driversOnDuty = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
+        const offDutyDrivers = drivers.filter(d => d.status === 'Off Duty').length;
+        const onTripVehicles = vehicles.filter(v => v.status === 'On Trip').length;
+        const retiredVehicles = vehicles.filter(v => v.status === 'Retired').length;
+
+        setKpis({
+          active_vehicles: activeVehicles,
+          available_vehicles: availableVehicles,
+          vehicles_in_maintenance: inMaintenance,
+          active_trips: activeTrips,
+          pending_trips: pendingTrips,
+          drivers_on_duty: driversOnDuty,
+          fleet_utilization: activeVehicles > 0 ? Math.round((onTripVehicles / activeVehicles) * 100) : 0,
+          total_vehicles: vehicles.length,
+          fleet_status: {
+            available: availableVehicles,
+            on_trip: onTripVehicles,
+            in_shop: inMaintenance,
+            retired: retiredVehicles,
+          },
+        });
+        setDriverStatus({
+          available: drivers.filter(d => d.status === 'Available').length,
+          onTrip: drivers.filter(d => d.status === 'On Trip').length,
+          offDuty: offDutyDrivers,
+          suspended: drivers.filter(d => d.status === 'Suspended').length,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadKpis();
+  }, [authToken, drivers, trips, vehicles]);
 
   const recentTrips = [...trips].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
   const stats = [
-    { label: "Active Fleet", value: activeVehicles.length, icon: Truck, color: "text-blue-600 dark:text-blue-500", bg: "bg-blue-100 dark:bg-blue-500/10" },
-    { label: "Available", value: availableVehicles.length, icon: CheckCircle, color: "text-green-600 dark:text-green-500", bg: "bg-green-100 dark:bg-green-500/10" },
-    { label: "In Shop", value: inMaintenance.length, icon: Wrench, color: "text-orange-600 dark:text-orange-500", bg: "bg-orange-100 dark:bg-orange-500/10" },
-    { label: "Active Trips", value: activeTrips.length, icon: Route, color: "text-purple-600 dark:text-purple-500", bg: "bg-purple-100 dark:bg-purple-500/10" },
-    { label: "Pending", value: pendingTrips.length, icon: Clock, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
-    { label: "On Duty", value: driversOnDuty.length, icon: Activity, color: "text-teal-600 dark:text-teal-500", bg: "bg-teal-100 dark:bg-teal-500/10" },
+    { label: "Active Fleet", value: kpis.active_vehicles, icon: Truck, color: "text-blue-600 dark:text-blue-500", bg: "bg-blue-100 dark:bg-blue-500/10" },
+    { label: "Available", value: kpis.available_vehicles, icon: CheckCircle, color: "text-green-600 dark:text-green-500", bg: "bg-green-100 dark:bg-green-500/10" },
+    { label: "In Shop", value: kpis.vehicles_in_maintenance, icon: Wrench, color: "text-orange-600 dark:text-orange-500", bg: "bg-orange-100 dark:bg-orange-500/10" },
+    { label: "Active Trips", value: kpis.active_trips, icon: Route, color: "text-purple-600 dark:text-purple-500", bg: "bg-purple-100 dark:bg-purple-500/10" },
+    { label: "Pending", value: kpis.pending_trips, icon: Clock, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
+    { label: "On Duty", value: kpis.drivers_on_duty, icon: Activity, color: "text-teal-600 dark:text-teal-500", bg: "bg-teal-100 dark:bg-teal-500/10" },
+    { label: "Off Duty", value: loading ? '…' : driverStatus.offDuty, icon: AlertTriangle, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-500/10" },
+  ];
+
+  const fleetStatusRows = [
+    { label: 'Available', count: kpis.fleet_status.available, color: 'bg-green-500' },
+    { label: 'On Trip', count: kpis.fleet_status.on_trip, color: 'bg-blue-500' },
+    { label: 'In Shop', count: kpis.fleet_status.in_shop, color: 'bg-orange-500' },
+    { label: 'Retired', count: kpis.fleet_status.retired, color: 'bg-red-500' },
   ];
 
   return (
@@ -43,12 +206,18 @@ export function Dashboard() {
           </div>
           <div>
             <p className="text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Fleet Utilization</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">{fleetUtilization}%</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">{loading ? '…' : `${kpis.fleet_utilization}%`}</p>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          Showing fallback dashboard data because live metrics could not be loaded: {error}
+        </div>
+      )}
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
         {stats.map((s, i) => {
           const Icon = s.icon;
           return (
@@ -115,19 +284,14 @@ export function Dashboard() {
         <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm p-6 flex flex-col">
            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Fleet Status</h3>
            <div className="space-y-6 flex-1 flex flex-col justify-center">
-              {[
-                { label: 'Available', count: availableVehicles.length, color: 'bg-green-500' },
-                { label: 'On Trip', count: vehicles.filter(v=>v.status==='On Trip').length, color: 'bg-blue-500' },
-                { label: 'In Shop', count: inMaintenance.length, color: 'bg-orange-500' },
-                { label: 'Retired', count: vehicles.filter(v=>v.status==='Retired').length, color: 'bg-red-500' }
-              ].map((status, i) => (
+              {fleetStatusRows.map((status, i) => (
                 <div key={i} className="flex justify-between items-center group">
                    <span className="text-sm font-medium text-gray-600 dark:text-neutral-400 w-24">{status.label}</span>
                    <div className="flex-1 flex items-center gap-4 mx-4">
                      <div className="h-2 w-full bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
                        <div 
                          className={`h-full ${status.color} transition-all duration-500`} 
-                         style={{ width: `${vehicles.length ? (status.count / vehicles.length) * 100 : 0}%` }}
+                         style={{ width: `${kpis.total_vehicles ? (status.count / kpis.total_vehicles) * 100 : 0}%` }}
                        />
                      </div>
                    </div>
