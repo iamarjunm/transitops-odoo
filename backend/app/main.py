@@ -2,8 +2,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, vehicles, driver_management, dashboard, maintenance, expenses, trip_management
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="TransitOps API")
+from app.utils.reminder import start_scheduler, stop_scheduler
+
+# app = FastAPI(title="TransitOps API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
+app = FastAPI(
+    title="TransitOps API",
+    lifespan=lifespan,
+)
 
 # Allow the local Next.js dev server and the deployed Vercel frontend.
 app.add_middleware(
