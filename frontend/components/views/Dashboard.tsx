@@ -42,6 +42,22 @@ type BackendDriver = {
   created_at: string;
 };
 
+function isDashboardKPIs(value: unknown): value is DashboardKPIs {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "active_vehicles" in value &&
+    "available_vehicles" in value &&
+    "vehicles_in_maintenance" in value &&
+    "active_trips" in value &&
+    "pending_trips" in value &&
+    "drivers_on_duty" in value &&
+    "fleet_utilization" in value &&
+    "total_vehicles" in value &&
+    "fleet_status" in value,
+  );
+}
+
 const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
 const emptyKpis: DashboardKPIs = {
@@ -125,7 +141,7 @@ export function Dashboard() {
           throw new Error(driverData && "detail" in driverData && driverData.detail ? driverData.detail : "Unable to load driver metrics.");
         }
 
-        if (kpiData && !("detail" in kpiData)) {
+        if (isDashboardKPIs(kpiData)) {
           setKpis(kpiData);
         }
 
