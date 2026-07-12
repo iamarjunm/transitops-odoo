@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, vehicles
+from app.api.routes import auth, vehicles, dashboard
 
 app = FastAPI(title="TransitOps API")
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(vehicles.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health", tags=["health"])
