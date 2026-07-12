@@ -5,6 +5,7 @@ import { User, Vehicle, Driver, Trip, Maintenance, Expense } from './types';
 
 interface StoreState {
   currentUser: User | null;
+  authToken: string | null;
   vehicles: Vehicle[];
   drivers: Driver[];
   trips: Trip[];
@@ -13,7 +14,7 @@ interface StoreState {
 }
 
 interface StoreContextType extends StoreState {
-  login: (user: User) => void;
+  login: (user: User, authToken?: string | null) => void;
   logout: () => void;
   addVehicle: (v: Omit<Vehicle, 'id'>) => void;
   addDriver: (d: Omit<Driver, 'id'>) => void;
@@ -58,6 +59,7 @@ const StoreContext = createContext<StoreContextType | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
   const [drivers, setDrivers] = useState<Driver[]>(mockDrivers);
   const [trips, setTrips] = useState<Trip[]>(mockTrips);
@@ -76,6 +78,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setMaintenance(data.maintenance || mockMaintenance);
       setExpenses(data.expenses || mockExpenses);
       setCurrentUser(data.currentUser || null);
+      setAuthToken(data.authToken || null);
     }
     setIsLoaded(true);
   }, []);
@@ -83,13 +86,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('transitops_data', JSON.stringify({
-        currentUser, vehicles, drivers, trips, maintenance, expenses
+        currentUser, authToken, vehicles, drivers, trips, maintenance, expenses
       }));
     }
-  }, [currentUser, vehicles, drivers, trips, maintenance, expenses, isLoaded]);
+  }, [currentUser, authToken, vehicles, drivers, trips, maintenance, expenses, isLoaded]);
 
-  const login = (user: User) => setCurrentUser(user);
-  const logout = () => setCurrentUser(null);
+  const login = (user: User, nextAuthToken: string | null = null) => {
+    setCurrentUser(user);
+    setAuthToken(nextAuthToken);
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setAuthToken(null);
+  };
 
   const addVehicle = (v: Omit<Vehicle, 'id'>) => {
     if (vehicles.some(existing => existing.regNo === v.regNo)) {
@@ -185,7 +195,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      currentUser, vehicles, drivers, trips, maintenance, expenses,
+      currentUser, authToken, vehicles, drivers, trips, maintenance, expenses,
       login, logout, addVehicle, addDriver, createTrip, dispatchTrip, completeTrip, cancelTrip, addMaintenance, closeMaintenance, addExpense
     }}>
       {children}

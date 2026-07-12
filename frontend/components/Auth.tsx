@@ -4,21 +4,76 @@ import { useState } from "react";
 import Image from "next/image";
 import { useStore } from "@/lib/store";
 import { Role } from "@/lib/types";
-import { Truck, Mail, Lock, ShieldCheck, ChevronDown, ArrowRight } from "lucide-react";
+import { Truck, Mail, Lock, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+
+type AuthMode = "login";
+
+type BackendUser = {
+  id: number;
+  full_name: string;
+  email: string;
+  role: Role;
+  is_active: boolean;
+  created_at: string;
+};
+
+type AuthResponse = {
+  access_token: string;
+  token_type: string;
+  role: Role;
+  user: BackendUser;
+};
+
+const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
 export default function Auth() {
   const { login } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("Admin");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const roles: Role[] = ["Admin", "Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"];
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email || !password) return;
-    login({ email, name: email.split("@")[0], role });
+    setError("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: trimmedEmail, password }),
+      });
+
+      const data = (await response.json().catch(() => null)) as AuthResponse | { detail?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(data && "detail" in data && data.detail ? data.detail : "Authentication failed.");
+      }
+
+      const authData = data as AuthResponse;
+      login(
+        {
+          email: authData.user.email,
+          name: authData.user.full_name,
+          role: authData.user.role,
+        },
+        authData.access_token
+      );
+
+      setPassword("");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Authentication failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,12 +136,16 @@ export default function Auth() {
             <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white tracking-tight mb-2">
               Welcome back
             </h2>
-            <p className="text-gray-500 dark:text-neutral-400">
-              Please enter your details to sign in.
-            </p>
+            <p className="text-gray-500 dark:text-neutral-400">Please enter your details to sign in.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          {error && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300">Email</label>
               <div className="relative">
@@ -121,37 +180,12 @@ export default function Auth() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300">Workspace Role</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <ShieldCheck className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  value={role}
-                  onChange={e => setRole(e.target.value as Role)}
-                  className="block w-full pl-10 pr-10 py-2.5 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm appearance-none shadow-sm"
-                >
-                  {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center">
-                <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded focus:outline-none cursor-pointer" />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600 dark:text-neutral-400 cursor-pointer">Remember for 30 days</label>
-              </div>
-              <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors">Forgot password?</a>
-              </div>
-            </div>
-
-            <button type="submit" className="group w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:focus:ring-blue-500 transition-all mt-4 active:scale-[0.98]">
-              Sign in
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="group w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:focus:ring-blue-500 transition-all mt-4 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmitting ? "Please wait..." : "Sign in"}
               <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
